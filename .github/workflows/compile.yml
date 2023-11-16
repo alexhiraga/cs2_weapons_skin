@@ -58,16 +58,19 @@ jobs:
           clang --version
           clang++ --version
 
-      - name: Install protobuf compiler
+      - name: Find Visual C++ compilers and make all environment variables global (W)
+        if: runner.os == 'Windows'
+        shell: cmd
         run: |
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            sudo apt-get install protobuf-compiler
-          fi
+          :: See https://github.com/microsoft/vswhere/wiki/Find-VC
+          for /f "usebackq delims=*" %%i in (`vswhere -latest -property installationPath`) do (
+            call "%%i"\Common7\Tools\vsdevcmd.bat -arch=x64 -host_arch=x64
+          )
 
-      - name: Generate protobuf files
-        run: |
-          # Replace 'your_protobuf_file.proto' with your actual protobuf file
-          protoc --cpp_out=. your_protobuf_file.proto
+          :: Loop over all environment variables and make them global.
+          for /f "delims== tokens=1,2" %%a in ('set') do (
+            echo>>"%GITHUB_ENV%" %%a=%%b
+          )
 
       # Checkout repos
       - name: Checkout
